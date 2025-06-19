@@ -1,0 +1,214 @@
+    <!DOCTYPE html>
+
+    <html lang="es">
+    <head>
+    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Gestión de Estudiantes</title>
+    <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+    <header class="site-header">
+        <h1>Gestión de Estudiantes</h1>
+        <input
+        type="search"
+        id="global-search"
+        placeholder="🔍 Buscar estudiante..."
+        aria-label="Buscar estudiante"
+        />
+    </header>
+
+    <main id="app">
+        <!-- FORMULARIO DE ALTA / EDICIÓN -->
+        <section id="student-form-section">
+        <h2 id="form-title">Registrar Estudiante</h2>
+        <form id="student-form" novalidate>
+            <!-- Nombre -->
+            <label for="fullName">Nombre completo *</label>
+            <input type="text" id="fullName" name="fullName" required />
+            <div class="error-msg" id="error-fullName"></div>
+
+            <!-- Fecha y Edad -->
+            <label for="birthDate">Fecha de nacimiento *</label>
+            <input type="date" id="birthDate" name="birthDate" required />
+            <div class="error-msg" id="error-birthDate"></div>
+
+            <label for="age">Edad</label>
+            <input type="number" id="age" name="age" readonly />
+
+            <!-- Grado (select dinámico) -->
+            <label for="grade">Grado *</label>
+            <select id="grade" name="grade" required>
+            <option value="">— Selecciona grado —</option>
+            </select>
+            <div class="error-msg" id="error-grade"></div>
+
+            <!-- Documento -->
+            <label for="docType">Tipo de documento *</label>
+            <select id="docType" name="docType" required>
+            <option value="">— Selecciona —</option>
+            <option value="TI">Tarjeta de Identidad</option>
+            <option value="CC">Cédula de Ciudadanía</option>
+            <option value="RC">Registro Civil</option>
+            </select>
+            <div class="error-msg" id="error-docType"></div>
+
+            <label for="docNumber">Número de documento *</label>
+            <input type="text" id="docNumber" name="docNumber"
+                pattern="\d+" title="Solo dígitos" required />
+            <div class="error-msg" id="error-docNumber"></div>
+
+            <!-- Ubicación -->
+            <label for="address">Dirección</label>
+            <input type="text" id="address" name="address" />
+
+            <label for="neighborhood">Barrio</label>
+            <input type="text" id="neighborhood" name="neighborhood" />
+
+            <!-- Familia -->
+            <label for="father">Padre</label>
+            <input type="text" id="father" name="father" />
+
+            <label for="mother">Madre</label>
+            <input type="text" id="mother" name="mother" />
+
+            <label for="guardian">Acudiente</label>
+            <input type="text" id="guardian" name="guardian" />
+
+            <!-- Salud y extras -->
+            <label for="eps">EPS / SISBÉN</label>
+            <input type="text" id="eps" name="eps" />
+
+            <label for="treatments">Tratamientos médicos</label>
+            <textarea id="treatments" name="treatments" rows="2"></textarea>
+
+            <label for="difficulties">Dificultades</label>
+            <textarea id="difficulties" name="difficulties" rows="2"></textarea>
+
+            <label for="extras">Observaciones adicionales</label>
+            <textarea id="extras" name="extras" rows="2"></textarea>
+
+            <!-- Foto -->
+            <label for="photoFile">Foto (opcional)</label>
+            <input type="file" id="photoFile" accept="image/*" />
+            <img id="photoPreview" class="photo-preview hidden" alt="Vista previa foto"/>
+
+            <!-- Acciones -->
+            <div class="form-actions">
+            <button type="submit" id="submit-btn" disabled>Guardar</button>
+            <button type="button" id="cancel-btn" class="hidden">Cancelar</button>
+            </div>
+        </form>
+        </section>
+
+        <!-- BÚSQUEDA Y SELECCIÓN -->
+        <section id="student-list-section">
+  <h2>Buscar Estudiante</h2>
+  <input type="text" id="search-input" placeholder="Nombre, grado o documento..." />
+
+  <h3>🧒 Jardín</h3>
+  <select id="select-jardin">
+    <option value="">— Selecciona un estudiante —</option>
+  </select>
+
+  <h3>📚 Primaria</h3>
+  <select id="select-primaria">
+    <option value="">— Selecciona un estudiante —</option>
+  </select>
+
+  <h3>🎓 Secundaria</h3>
+  <select id="select-secundaria">
+    <option value="">— Selecciona un estudiante —</option>
+  </select>
+</section>
+
+        </section>
+
+        <!-- PERFIL Y OBSERVACIONES -->
+        <section id="student-profile-section" class="hidden">
+        <div class="profile-header">
+            <h2>Perfil de <span id="profileName"></span></h2>
+            <div class="profile-actions">
+            <button id="edit-student-btn">✏️ Editar</button>
+            <button id="delete-student-btn">🗑️ Borrar</button>
+            </div>
+        </div>
+
+        <div class="profile-grid">
+            <div class="profile-photo">
+            <img id="profilePhoto" alt="Foto del estudiante"/>
+            </div>
+            <div class="profile-data">
+            <p><strong>Fecha de nac.:</strong> <span id="profileBirth"></span></p>
+            <p><strong>Edad:</strong> <span id="profileAge"></span></p>
+            <p><strong>Grado:</strong> <span id="profileGrade"></span></p>
+            <p><strong>Documento:</strong> <span id="profileDoc"></span></p>
+            <p><strong>Dirección:</strong> <span id="profileAddress"></span></p>
+            <p><strong>Barrio:</strong> <span id="profileNeighborhood"></span></p>
+            <p><strong>Padre:</strong> <span id="profileFather"></span></p>
+            <p><strong>Madre:</strong> <span id="profileMother"></span></p>
+            <p><strong>Acudiente:</strong> <span id="profileGuardian"></span></p>
+            <p><strong>EPS/SISBÉN:</strong> <span id="profileEps"></span></p>
+            <p><strong>Tratamientos:</strong> <span id="profileTreatments"></span></p>
+            <p><strong>Dificultades:</strong> <span id="profileDifficulties"></span></p>
+            <p><strong>Extras:</strong> <span id="profileExtras"></span></p>
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Observaciones -->
+        <h3 id="obs-form-title">Nueva Observación</h3>
+        <form id="obs-form" novalidate>
+            
+            <label for="obsDate">Fecha *</label>
+            <input type="date" id="obsDate" name="obsDate" required />
+            <div class="error-msg" id="error-obsDate"></div>
+
+            <label for="obsDesc">Descripción *</label>
+            <textarea id="obsDesc" name="obsDesc" rows="2" required></textarea>
+            <div class="error-msg" id="error-obsDesc"></div>
+
+            <label for="obsAction">Acción pedagógica *</label>
+            <textarea id="obsAction" name="obsAction" rows="2" required></textarea>
+            <div class="error-msg" id="error-obsAction"></div>
+
+            <label for="obsCommit">Compromisos *</label>
+            <textarea id="obsCommit" name="obsCommit" rows="2" required></textarea>
+            <div class="error-msg" id="error-obsCommit"></div>
+            <label for="obsSignedBy">Firma del Docente</label>
+           <input type="text" id="obsSignedBy" placeholder="Nombre completo del docente">
+
+
+            <label for="obsGuardian">Firma del Acudiente</label>
+            <input type="text" id="obsGuardian" placeholder="Nombre del acudiente">
+
+          <label for="obsStudent">Firma del Estudiante</label>
+          <input type="text" id="obsStudent" placeholder="Nombre del estudiante">
+
+
+
+            <div class="form-actions">
+            <button type="submit" id="obs-submit-btn" disabled>Guardar Observación</button>
+            <button type="button" id="obs-cancel-btn" class="hidden">Cancelar</button>
+            </div>
+        </form>
+
+        <h3>Historial de Observaciones</h3>
+        <button onclick="exportarHistorialPDF()">📄 Exportar historial en PDF</button>
+
+        <div id="obs-list" class="obs-list"></div>
+        </section>
+        
+    </main>
+
+  <!-- Al final del body, justo antes del cierre -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="app.js"></script>
+
+
+</body>
+</html>
