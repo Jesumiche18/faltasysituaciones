@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observador Estudiantil v7.0 (Login Seguro)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --primary-red: #B71C1C;
+      --secondary-red: #D32F2F;
+      --light-gray: #f5f5f5;
+      --dark-text: #212121;
+      --medium-text: #616161;
+      --white: #ffffff;
+      --border-color: #e0e0e0;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+      --success-green: #388E3C;
+      --error-red: #D32F2F;
+    }
+    body { font-family: 'Roboto', sans-serif; background-color: var(--light-gray); margin: 0; padding: 20px; color: var(--dark-text); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .container, #login-screen { max-width: 900px; width: 100%; margin: auto; background-color: var(--white); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+    header { background: linear-gradient(135deg, var(--primary-red), var(--secondary-red)); color: var(--white); padding: 25px; text-align: center; border-bottom: 4px solid rgba(0,0,0,0.1); position: relative;}
+    header h1 { margin: 0; font-family: 'Poppins', sans-serif; font-size: 1.8em; letter-spacing: 1px; }
+    .filters-bar, .student-selector-bar { padding: 15px 20px; background-color: #f9f9f9; border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; align-items: center; gap: 15px; }
+    .student-header { display: none; padding: 20px; border-bottom: 1px solid var(--border-color); background-color: var(--white); display: flex; align-items: center; gap: 20px; transition: all 0.3s ease; }
+    .student-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary-red); }
+    .student-info h2 { margin: 0 0 5px 0; font-family: 'Poppins', sans-serif; color: var(--primary-red); }
+    .student-info p { margin: 4px 0; color: var(--medium-text); font-size: 0.9em; display: flex; align-items: center; gap: 8px; }
+    nav.tabs { display: flex; background-color: #eee; }
+    nav.tabs button { flex: 1; padding: 15px; border: none; background-color: transparent; cursor: pointer; font-size: 1em; font-weight: 600; color: var(--medium-text); transition: all 0.3s ease; border-bottom: 3px solid transparent; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    nav.tabs button.active { color: var(--primary-red); background-color: var(--white); border-bottom: 3px solid var(--primary-red); }
+    .content-view { display: none; padding: 25px; animation: fadeIn 0.5s ease; }
+    .content-view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+    h3 { font-family: 'Poppins', sans-serif; color: var(--primary-red); border-bottom: 2px solid var(--light-gray); padding-bottom: 10px; margin: 0 0 20px 0; }
+    input, select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-size: 1em; background-color: #fafafa; transition: all 0.2s ease; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary-red); box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15); background-color: var(--white); outline: none; }
+    button { border: none; border-radius: 8px; padding: 12px 20px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; width: 100%; margin-top: 10px; font-size: 1em; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background-color: var(--primary-red); color: var(--white); }
+    .btn-primary:hover { background-color: #A31515; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .btn-secondary { background-color: #616161; color: var(--white); }
+    .obs-summary { background-color: var(--light-gray); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 500; }
+    .obs-card { background: var(--white); border: 1px solid var(--border-color); border-left: 5px solid var(--primary-red); border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    #firmaCanvas { border: 2px dashed var(--border-color); border-radius: 8px; cursor: crosshair; touch-action: none; }
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 15px 20px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.2); opacity: 0; transform: translateY(20px); animation: slideIn 0.5s forwards, slideOut 0.5s 3.5s forwards; }
+    .toast.success { background-color: var(--success-green); }
+    .toast.error { background-color: var(--error-red); }
+    @keyframes slideIn { to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideOut { to { opacity: 0; transform: translateY(20px); } }
+    #login-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 50px; text-align: center; }
+    
+    /* Dark Mode Styles */
+    body.dark-mode {
+        --light-gray: #121212;
+        --dark-text: #e0e0e0;
+        --medium-text: #a0a0a0;
+        --white: #1e1e1e;
+        --border-color: #424242;
+        --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    body.dark-mode .container, body.dark-mode #login-screen { background-color: var(--white); color: var(--dark-text); }
+    body.dark-mode .filters-bar, body.dark-mode .student-selector-bar { background-color: #2a2a2a; border-bottom: 1px solid var(--border-color); }
+    body.dark-mode .student-header { background-color: var(--white); border-bottom-color: var(--border-color); }
+    body.dark-mode .student-info p { color: var(--medium-text); }
+    body.dark-mode nav.tabs { background-color: #252525; }
+    body.dark-mode nav.tabs button { color: var(--medium-text); }
+    body.dark-mode nav.tabs button.active { color: var(--primary-red); background-color: var(--white); border-bottom-color: var(--primary-red); }
+    body.dark-mode h3 { border-bottom-color: var(--border-color); }
+    body.dark-mode input, body.dark-mode select, body.dark-mode textarea { background-color: #2c2c2c; border-color: var(--border-color); color: var(--dark-text); }
+    body.dark-mode input:focus, body.dark-mode select:focus, body.dark-mode textarea:focus { background-color: #1e1e1e; border-color: var(--primary-red); }
+    body.dark-mode .obs-summary { background-color: #2a2a2a; color: var(--dark-text); }
+    body.dark-mode .obs-card { background: #2c2c2c; border-color: var(--border-color); border-left-color: var(--primary-red); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    body.dark-mode #firmaCanvas { border-color: var(--border-color); }
+    
+    /* Dark Mode Toggle Switch */
+    .dark-mode-toggle { position: absolute; top: 20px; left: 20px; display: flex; align-items: center; cursor: pointer; }
+    .dark-mode-toggle .toggle-switch { width: 50px; height: 25px; background-color: #ccc; border-radius: 25px; position: relative; transition: background-color 0.3s; }
+    .dark-mode-toggle .toggle-switch::before { content: ''; position: absolute; width: 21px; height: 21px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.3s; }
+    .dark-mode-toggle input[type="checkbox"] { display: none; }
+    .dark-mode-toggle input:checked + .toggle-switch { background-color: var(--primary-red); }
+    .dark-mode-toggle input:checked + .toggle-switch::before { transform: translateX(25px); }
+  </style>
+</head>
+<body>
+
+  <div id="login-screen" style="display: none;">
+      <header><h1>Observador Estudiantil</h1></header>
+      <div style="padding: 40px; width: 100%; max-width: 400px; box-sizing: border-box;">
+          <h2>Inicio de Sesión</h2>
+          <p>Ingrese sus credenciales de docente.</p>
+          <input type="email" id="email" placeholder="Correo Electrónico" style="margin-bottom: 10px;">
+          <input type="password" id="password" placeholder="Contraseña">
+          <button class="btn-primary" onclick="window.login()">Ingresar</button>
+      </div>
+  </div>
+
+  <div id="main-app" class="container" style="display: block;">
+    <header>
+      <div class="dark-mode-toggle">
+        <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+        <label for="darkModeToggle" class="toggle-switch"></label>
+      </div>
+      <h1>Observador Estudiantil Digital</h1>
+      <button onclick="window.fb.signOut(window.fb.auth)" style="position: absolute; top: 20px; right: 20px; width: auto; background-color: transparent; border: 1px solid white; padding: 5px 10px; font-size: 0.8em;">Cerrar Sesión</button>
+    </header>
+
+    <div class="filters-bar">
+        <div><label for="searchName">Buscar por nombre:</label><input type="text" id="searchName" placeholder="Escriba un nombre..."></div>
+        <div><label for="filterGrade">Filtrar por grado:</label><select id="filterGrade"><option value="">Todos los grados</option></select></div>
+    </div>
+
+    <div class="student-selector-bar"><label for="selectorEstudiante">Estudiante Activo:</label><select id="selectorEstudiante"></select></div>
+    <div id="studentHeader" class="student-header">
+      <img id="studentPhoto" src="https://placehold.co/100x100/eeeeee/757575?text=Foto" alt="Foto del estudiante" class="student-photo">
+      <div class="student-info">
+        <h2 id="studentName">Seleccione un estudiante</h2>
+        <p id="studentCourse">Curso no especificado</p>
+        <p id="studentContact">Contacto no especificado</p>
+        <p id="studentMedical">Datos médicos no especificados</p>
+      </div>
+    </div>
+    
+    <nav class="tabs">
+      <button id="tab-historial" onclick="window.app.mostrarVista('vista-historial', this)" class="active"> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M12 14V4M6 20v-2M6 18V4M18 20v-4M18 16V4"/></svg> Historial </button>
+      <button id="tab-agregar" onclick="window.app.mostrarVista('vista-agregar-observacion', this)"> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Añadir Observación </button>
+      <button id="tab-registrar" onclick="window.app.mostrarVista('vista-registro-estudiante', this)"> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Datos del Estudiante </button>
+    </nav>
+
+    <main>
+        <div id="vista-historial" class="content-view active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Historial de Observaciones</h3>
+                <button class="btn-secondary" onclick="window.app.generarPDF()" style="width: auto;"> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Generar PDF </button>
+            </div>
+            <div id="obs-summary" class="obs-summary" style="display: none;"></div>
+            <div id="listaObservaciones"><p>Seleccione un estudiante para ver su historial.</p></div>
+        </div>
+        <div id="vista-agregar-observacion" class="content-view">
+            <h3 id="form-observacion-titulo">Agregar Observación</h3><input type="hidden" id="editingObservationId">
+            <div class="form-grid">
+                <div><label for="fecha">Fecha:</label><input type="date" id="fecha" /></div>
+                <div><label for="docente">Docente que reporta:</label><input type="text" id="docente" placeholder="Nombre del docente"/></div>
+            </div>
+            <label for="selectorFalta">Relleno Rápido por Falta:</label><select id="selectorFalta"><option value="">-- Seleccionar falta --</option></select>
+            <label for="selectorSituacion">Relleno Rápido por Situación:</label><select id="selectorSituacion"><option value="">-- Seleccionar situación --</option></select>
+            <label for="descripcion">Descripción de la situación:</label><textarea id="descripcion" rows="4"></textarea>
+            <label for="accion">Acción pedagógica:</label><textarea id="accion" rows="3"></textarea>
+            <label for="compromisos">Compromisos y acuerdos:</label><textarea id="compromisos" rows="3"></textarea>
+            <label>Firma:</label><canvas id="firmaCanvas" width="400" height="150"></canvas>
+            <button onclick="window.limpiarFirma()" class="btn-tertiary">Limpiar Firma</button>
+            <button id="guardarObservacionBtn" onclick="window.app.guardarObservacion()" class="btn-primary">Guardar Observación</button>
+            <button id="cancelarEdicionBtn" onclick="window.app.cancelarEdicion()" class="btn-secondary" style="display: none;">Cancelar Edición</button>
+        </div>
+        <div id="vista-registro-estudiante" class="content-view">
+            <h3>Datos del Estudiante</h3>
+            <form id="form-registro-estudiante">
+                <div class="form-grid">
+                    <div class="full-width"><label for="nombre">Nombre completo:</label><input type="text" id="nombre" /></div>
+                    <div><label for="fechaNacimiento">Fecha de nacimiento:</label><input type="date" id="fechaNacimiento" /></div>
+                    <div><label for="tipoDocumento">Tipo de documento:</label><select id="tipoDocumento"><option value="Registro Civil">Registro Civil</option><option value="Tarjeta de Identidad">Tarjeta de Identidad</option></select></div>
+                    <div><label for="numeroDocumento">Número de documento:</label><input type="text" id="numeroDocumento" /></div>
+                    <div><label for="curso">Grado y sección:</label><select id="curso"></select></div>
+                    <div><label for="telefono">Teléfono de contacto:</label><input type="tel" id="telefono" /></div>
+                    <div><label for="barrio">Barrio:</label><input type="text" id="barrio" /></div>
+                    <div><label for="padre">Nombre del padre:</label><input type="text" id="padre" /></div>
+                    <div><label for="madre">Nombre de la madre:</label><input type="text" id="madre" /></div>
+                    <div><label for="eps">EPS:</label><input type="text" id="eps" /></div>
+                    <div><label for="rh">Tipo de Sangre (RH):</label><select id="rh"><option value="">No especificado</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option></select></div>
+                    <div class="full-width"><label for="foto">Foto del estudiante:</label><input type="file" id="foto" accept="image/*" /><img id="preview" class="student-photo" src="https://placehold.co/100x100/eeeeee/757575?text=Foto" alt="Vista previa" /></div>
+                </div>
+            </form>
+            <button onclick="window.app.guardarEstudiante()" class="btn-primary">Guardar Nuevo Estudiante</button>
+            <button onclick="window.app.actualizarEstudiante()" class="btn-secondary">Actualizar Datos</button>
+        </div>
+    </main>
+  </div>
+  <div id="toast-container"></div>
+  <script>
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+    }
+  </script>
+
+  <script type="module">
+    // --- PASO 1: IMPORTACIÓN DE FUNCIONES DE FIREBASE ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, addDoc, getDocs, setDoc, deleteDoc, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    // --- PASO 2: CONFIGURACIÓN DE FIREBASE ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAbdpEuZ6rXugkgWEaI2iNvGKSfxwzUUj8",
+      authDomain: "observador-belen.firebaseapp.com",
+      projectId: "observador-belen",
+      storageBucket: "observador-belen.appspot.com",
+      messagingSenderId: "349499382263",
+      appId: "1:349499382263:web:fd2ee0fd466137d2d3f6f2",
+      measurementId: "G-11MTZ0BJV3"
+    };
+
+    // --- PASO 3: INICIALIZACIÓN DE FIREBASE ---
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- PASO 4: HACER LAS FUNCIONES DE FIREBASE ACCESIBLES GLOBALMENTE ---
+    window.fb = { auth, signOut };
+    
+    // --- PASO 5: GESTIÓN DE AUTENTICACIÓN ---
+    onAuthStateChanged(auth, (user) => {
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.getElementById('main-app');
+        if (user) {
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'block';
+            window.app.init(); 
+        } else {
+            loginScreen.style.display = 'flex';
+            mainApp.style.display = 'none';
+            if(window.app && typeof window.app.cleanup === 'function'){
+                window.app.cleanup();
+            }
+        }
+    });
+
+    window.login = () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        if(!email || !password) {
+            alert("Por favor, ingrese correo y contraseña.");
+            return;
+        }
+        signInWithEmailAndPassword(auth, email, password)
+            .catch((error) => {
+                console.error("Error en login:", error);
+                alert("Credenciales incorrectas. Por favor, inténtelo de nuevo.");
+            });
+    };
+
+    // --- PASO 6: LÓGICA PRINCIPAL DE LA APLICACIÓN ---
+    window.app = (function() {
+        let localStudents = [];
+        let localObservations = [];
+        let unsubscribeStudents = null;
+        let unsubscribeObservations = null;
+
+        const faltas = [ { tipo: "Leve", texto: "Ausentarse o abstenerse de participar en actividades académicas sin justificación", accion: "Preparar una actividad relacionada con el tema abordado en clase." }, { tipo: "Leve", texto: "Incumplir el horario establecido para asistir al centro educativo", accion: "Realizar una actividad de trabajo social en tiempo extraescolar." }, { tipo: "Leve", texto: "No portar los materiales requeridos para las actividades académicas", accion: "Compromiso de traer los recursos solicitados; si es posible, se prestarán materiales." }, { tipo: "Leve", texto: "Hacer uso inadecuado de los materiales, aulas y otros espacios institucionales", accion: "Realizar una actividad sobre el cuidado de los espacios institucionales." }, { tipo: "Leve", texto: "No contribuir al aseo de la planta física y su entorno", accion: "Reflexión grupal sobre el aseo del entorno y creación de una campaña institucional de cuidado." }, { tipo: "Leve", texto: "Incumplir con las actividades académicas o compromisos de convivencia", accion: "Cita a los acudientes para acompañamiento en el ambiente donde ocurrió la falta." }, { tipo: "Leve", texto: "Utilizar accesorios no permitidos en el uniforme", accion: "Firma de compromiso en el observador y elaboración de un documento reflexivo sobre su impacto en la salud." }, { tipo: "Leve", texto: "No prestar atención cuando un integrante de la comunidad educativa se dirige al estudiantado", accion: "Elaboración de una campaña en el aula sobre respeto y escucha activa." }, { tipo: "Leve", texto: "Manifestaciones afectivas inapropiadas para el contexto escolar", accion: "Trabajo reflexivo conjunto entre estudiante, docente y familia sobre los límites en las relaciones afectivas." }, { tipo: "Leve", texto: "Utilizar vocabulario o modales inadecuados", accion: "Investigación sobre el origen de la palabra mal utilizada y exposición del hallazgo." }, { tipo: "Leve", texto: "Abordar inoportunamente la ruta escolar, quedarse de la ruta o transportarse sin permiso", accion: "Disculpa pública y diseño de una actividad sobre responsabilidad y seguridad en salidas pedagógicas." }, { tipo: "Leve", texto: "Permanecer en la institución fuera del horario académico sin autorización", accion: "Presentarse con su acudiente ante el director de curso para establecer acuerdos." }, { tipo: "Leve", texto: "Consumo inadecuado de los alimentos suministrados en la institución", accion: "Acompañamiento en el restaurante escolar y campaña sobre el buen uso de los alimentos." }, { tipo: "Leve", texto: "Alterar el ambiente de clase con comportamientos que afectan el aprendizaje", accion: "Reflexión abordada en la asamblea de curso y liderazgo de una actividad pedagógica." }, { tipo: "Leve", texto: "Vender comestibles o artículos en el centro educativo", accion: "Reflexión sobre las implicaciones del consumo de productos sin condiciones sanitarias adecuadas." }, { tipo: "Leve", texto: "No entregar a tiempo circulares o citaciones enviadas por la institución", accion: "Presentarse con su acudiente para establecer acuerdos." }, { tipo: "Leve", texto: "Incumplir de manera intencional con los protocolos de bioseguridad", accion: "Proceso de reflexión y si reincide, campaña sobre autocuidado y cumplimiento de protocolos." }, { tipo: "Leve", texto: "Incumplir reiteradamente con los parámetros de convivencia digital", accion: "Reflexión y si reincide más de dos veces, campaña virtual sobre cumplimiento y consecuencias." }, { tipo: "Grave", texto: "Ausentarse del plantel en horas de estudio sin autorización", accion: "Realizar un escrito en horario extraescolar, bajo supervisión de su acudiente, sobre los conceptos trabajados durante la ausencia." }, { tipo: "Grave", texto: "Ingresar al plantel, aulas u otros espacios por lugares no autorizados", accion: "Elaborar una campaña sobre la ley de irrupción en espacios públicos o privados." }, { tipo: "Grave", texto: "Tomar objetos personales de compañeros/as o docentes sin autorización", accion: "Disculpa pública, participación en un taller sobre el valor de la honradez y creación de una estrategia web para promoverlo." }, { tipo: "Grave", texto: "Intentar o hacer fraude en procesos académicos", accion: "Realizar el proceso de sustentación con acompañamiento de su acudiente." }, { tipo: "Grave", texto: "Pertenecer o promover grupos que afecten el buen nombre o valores institucionales", accion: "Desarrollar una campaña sobre el horizonte y valores del colegio." }, { tipo: "Grave", texto: "Jugar con objetos inapropiados fuera de las canchas, poniendo en riesgo la seguridad", accion: "Compromiso de no repetir la acción y campaña sobre juegos adecuados al contexto escolar." }, { tipo: "Grave", texto: "Organizar o participar en juegos de azar y apuestas en el colegio", accion: "Diseñar y poner en práctica una propuesta de juegos lúdicos en tiempos de descanso con un grupo de primaria." }, { tipo: "Grave", texto: "Usar el nombre del colegio para afectar su integridad y reputación", accion: "Investigar la historia del colegio, resaltando el origen de su nombre, y socializarlo en una asamblea de curso." }, { tipo: "Grave", texto: "Uso indebido de dispositivos electrónicos que distraigan las labores académicas", accion: "Elaborar un folleto sobre las consecuencias del uso irresponsable de dispositivos." }, { tipo: "Grave", texto: "Difundir propaganda política, religiosa o ideológica que distorsione valores éticos y morales", accion: "Realizar un cuadro comparativo sobre el perfil del estudiante y la información difundida." }, { tipo: "Grave", texto: "Manipular el software y hardware de los equipos sin autorización", accion: "Aplicar la acción pedagógica recomendada por el equipo de mantenimiento de cómputo." }, { tipo: "Grave", texto: "Uso inadecuado de internet con fines diferentes a los académicos", accion: "Campaña preventiva sobre los peligros cibernéticos para niños, niñas y adolescentes." }, { tipo: "Grave", texto: "Promover prácticas psíquicas o parapsicológicas que afecten la comunidad", accion: "Elaborar una reseña sobre las consecuencias psicológicas y emocionales de dichas prácticas." }, { tipo: "Grave", texto: "Suplantar o ayudar a suplantar la identidad de otra persona, presencial o virtualmente", accion: "Investigación sobre un caso de suplantación en el entorno y sus consecuencias legales." }, { tipo: "Grave", texto: "Elaborar tatuajes o piercings dentro del colegio, atentando contra la integridad personal", accion: "Comunicación con acudientes y exposición sobre autocuidado y salubridad." }, { tipo: "Grave", texto: "Copiar documentos o comercializar productos protegidos por derechos de autor", accion: "Infografía sobre derechos de autor y las implicaciones legales de vulnerarlos." }, { tipo: "Grave", texto: "Actitudes y comportamientos que afecten la formación y el prestigio institucional", accion: "Se implementarán las acciones pedagógicas que la persona responsable del seguimiento a la falta, considere pertinente." }, { tipo: "Muy Grave", texto: "Porte o uso de armas y elementos peligrosos", accion: "Investigación sobre la legislación colombiana en torno al porte ilegal de armas, socializada con el equipo de dirección. Posible cancelación de matrícula según el debido proceso." }, { tipo: "Muy Grave", texto: "Participar en escándalo público o afectar la imagen institucional", accion: "Acción reparadora junto con su acudiente para resarcir el daño causado. Posible cancelación de matrícula según el debido proceso." }, { tipo: "Muy Grave", texto: "Agredir físicamente a un integrante de la institution con objetos peligrosos", accion: "Acto de reparación público hacia la persona agredida. Posible cancelación de matrícula según el debido proceso." }, { tipo: "Muy Grave", texto: "Participar en actos de vandalismo", accion: "Reparación y embellecimiento de los bienes afectados. Posible cancelación de matrícula según el debido proceso." }, { tipo: "Muy Grave", texto: "Difamar o vulnerar la privacidad de un integrante de la comunidad educativa", accion: "Acto de reparación público, elaboración de un informe sobre el derecho a la intimidad y buen nombre. Posible cancelación de matrícula según el debido proceso." }, { tipo: "Muy Grave", texto: "Practicar ritos que atenten contra la integridad humana", accion: "Investigación sobre las consecuencias emocionales y psicológicas de dichas prácticas, socializada en la comunidad educativa." }, { tipo: "Muy Grave", texto: "Presentarse en la institución bajo efectos de alcohol o sustancias psicoactivas", accion: "Elaboración de un estand sobre los efectos nocivos del consumo de estas sustancias, presentado en momentos de descanso o tiempos asignados. Posible cancelación de matrícula según el debido proceso." }, { tipo: "Muy Grave", texto: "Presentar comportamientos que afecten la formación y la imagen institucional no contemplados anteriormente", accion: "Aplicación de las acciones pedagógicas determinadas por la persona responsable del seguimiento a la falta." } ];
+        const situaciones = [ { tipo: "1", texto: "1. Alterar el clima escolar con acciones que afecten el trabajo pedagógico en los ambientes de aprendizaje." }, { tipo: "1", texto: "2. Responder a los conflictos de manera agresiva, ya sea física, verbal o escrita." }, { tipo: "1", texto: "3. Agredir verbalmente a cualquier integrante de la comunidad educativa mediante insultos, apodos ofensivos, burlas, amenazas o expresiones morbosas." }, { tipo: "1", texto: "4. Emplear gestos o actos irrespetuosos con connotación sexual." }, { tipo: "1", texto: "5. Excluir o señalar a personas de la comunidad por razones de género u orientación sexual." }, { tipo: "1", texto: "6. Generar agresiones físicas e interacciones que hostiguen o invadan el espacio íntimo de otra persona, con o sin contenido sexual." }, { tipo: "1", texto: "7. Difundir rumores sobre una persona que afecten su imagen e integridad." }, { tipo: "1", texto: "8. Emplear mentiras o comentarios malintencionados que afecten la integridad física, psicológica o moral de algún integrante de la comunidad educativa." }, { tipo: "2", texto: "1. Agredir físicamente a un integrante de la institución educativa con su propio cuerpo o con objetos." }, { tipo: "2", texto: "2. Amenazar de manera reiterada la integridad física, psicológica o moral de cualquier persona de la comunidad educativa." }, { tipo: "2", texto: "3. Participar en peleas o disputas dentro o fuera del Centro Educativo." }, { tipo: "2", texto: "4. Callar o hacerse cómplice de actos que atenten contra la integridad física o moral de un integrante de la comunidad educativa." }, { tipo: "2", texto: "5. Agredir reiteradamente a un integrante de la comunidad con contenido sexual." }, { tipo: "2", texto: "6. Emplear apodos y comentarios sexistas de manera recurrente." }, { tipo: "2", texto: "7. Tocamientos sexuales no consentidos." }, { tipo: "2", texto: "8. Mensajes sexuales ofensivos escritos en espacios públicos como baños, paredes, tableros y pupitres, considerados como acoso escolar." }, { tipo: "2", texto: "9. Uso de internet para amenazar o vulnerar la dignidad de un integrante de la comunidad (ciberbullying)." }, { tipo: "2", texto: "10. Manifestaciones que afecten el respeto por la integridad física y las expresiones sexuales de las personas." }, { tipo: "3", texto: "1. Atentar contra la integridad física, psicológica o moral de una persona de la comunidad educativa, constituyendo un delito." }, { tipo: "3", texto: "2. Plagio y alteración de documento público." }, { tipo: "3", texto: "3. Apoderarse de un bien ajeno con el propósito de obtener provecho, según el artículo 239 de la ley 599 de 2000." }, { tipo: "3", texto: "4. Comercializar o distribuir material con contenido sexual que involucre a un menor de edad o a un integrante de la comunidad educativa." }, { tipo: "3", texto: "5. Incitar a la pornografía infantil y la prostitución de un menor de edad dentro de la comunidad educativa." }, { tipo: "3", texto: "6. Participar en actos vandálicos que atenten contra personas, el patrimonio institucional o terceros." }, { tipo: "3", texto: "7. Tener, almacenar, facilitar, consumir, distribuir o vender bebidas alcohólicas, drogas o sustancias ilícitas dentro del centro educativo." }, { tipo: "3", texto: "8. Consumir bebidas alcohólicas o sustancias psicoactivas en espacios públicos cercanos a la institución, según el artículo 83 de la ley 1801." }, { tipo: "3", texto: "9. Utilizar la fuerza o el engaño para acceder a cualquier tipo de contacto sexual dentro o fuera de la institución." }, { tipo: "3", texto: "10. Amenazar, sobornar o extorsionar a un integrante de la comunidad educativa." }, { tipo: "3", texto: "11. Atentar contra la vida de una persona de la comunidad educativa." }, { tipo: "3", texto: "12. Participar en otros actos delictivos no contemplados en este listado que afecten la vida digna." } ];
+        
+        const showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => { container.removeChild(toast); }, 4000);
+        };
+        
+        function mostrarVista(idVista, tabActiva) {
+            document.querySelectorAll('.content-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(idVista).classList.add('active');
+            document.querySelectorAll('.tabs button').forEach(t => t.classList.remove('active'));
+            if(tabActiva) tabActiva.classList.add('active');
+        };
+
+        function populateGradeSelectors() {
+            const cursoSelector = document.getElementById('curso');
+            const filterGradeSelector = document.getElementById('filterGrade');
+            const grados = ["Transición", "Primero", "Segundo", "Tercero", "Cuarto", "Quinto", "Sexto", "Séptimo", "Octavo", "Noveno", "Décimo", "Once"];
+            const secciones = ["A", "B", "C"];
+            cursoSelector.innerHTML = '';
+            filterGradeSelector.innerHTML = '<option value="">Todos los grados</option>';
+            grados.forEach(grado => { secciones.forEach(seccion => { const valor = `${grado} ${seccion}`; cursoSelector.add(new Option(valor, valor)); filterGradeSelector.add(new Option(valor, valor)); }); });
+        };
+
+        const canvas = document.getElementById('firmaCanvas');
+        const ctx = canvas.getContext('2d');
+        let pintando = false;
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        };
+        const empezarDibujo = (e) => { pintando = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); };
+        const dibujar = (e) => { if (!pintando) return; e.preventDefault(); const pos = getPos(e); ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#2c3e50'; ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
+        const pararDibujo = () => pintando = false;
+        ['mousedown', 'touchstart'].forEach(evt => canvas.addEventListener(evt, empezarDibujo, { passive: false }));
+        ['mousemove', 'touchmove'].forEach(evt => canvas.addEventListener(evt, dibujar, { passive: false }));
+        ['mouseup', 'mouseout', 'touchend'].forEach(evt => canvas.addEventListener(evt, pararDibujo));
+        window.limpiarFirma = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        async function guardarEstudiante() {
+            if (!auth.currentUser) { showToast("Debes iniciar sesión para guardar.", "error"); return; }
+            const estudiante = {
+                nombre: document.getElementById('nombre').value.trim(),
+                fechaNacimiento: document.getElementById('fechaNacimiento').value,
+                tipoDocumento: document.getElementById('tipoDocumento').value,
+                numeroDocumento: document.getElementById('numeroDocumento').value.trim(),
+                curso: document.getElementById('curso').value,
+                telefono: document.getElementById('telefono').value.trim(),
+                barrio: document.getElementById('barrio').value.trim(),
+                padre: document.getElementById('padre').value.trim(),
+                madre: document.getElementById('madre').value.trim(),
+                eps: document.getElementById('eps').value.trim(),
+                rh: document.getElementById('rh').value,
+                foto: document.getElementById('preview').src,
+                owner: auth.currentUser.uid 
+            };
+            if (!estudiante.nombre || !estudiante.numeroDocumento) { showToast('Nombre y documento son obligatorios.', 'error'); return; }
+            const q = query(collection(db, "estudiantes"), where("numeroDocumento", "==", estudiante.numeroDocumento), where("owner", "==", auth.currentUser.uid));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) { showToast('Un estudiante con ese documento ya existe.', 'error'); return; }
+            try {
+                await addDoc(collection(db, "estudiantes"), estudiante);
+                showToast('Estudiante guardado con éxito.');
+                document.getElementById('form-registro-estudiante').reset();
+                document.getElementById('preview').src = 'https://placehold.co/100x100/eeeeee/757575?text=Foto';
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showToast('Error al guardar el estudiante.', 'error');
+            }
+        };
+
+        async function actualizarEstudiante() {
+            const studentId = document.getElementById('selectorEstudiante').value;
+            if (!studentId) { showToast('Seleccione un estudiante para actualizar.', 'error'); return; }
+            
+            const studentRef = doc(db, "estudiantes", studentId);
+            const newData = {
+                nombre: document.getElementById('nombre').value.trim(),
+                fechaNacimiento: document.getElementById('fechaNacimiento').value,
+                tipoDocumento: document.getElementById('tipoDocumento').value,
+                numeroDocumento: document.getElementById('numeroDocumento').value.trim(),
+                curso: document.getElementById('curso').value,
+                telefono: document.getElementById('telefono').value.trim(),
+                barrio: document.getElementById('barrio').value.trim(),
+                padre: document.getElementById('padre').value.trim(),
+                madre: document.getElementById('madre').value.trim(),
+                eps: document.getElementById('eps').value.trim(),
+                rh: document.getElementById('rh').value,
+                foto: document.getElementById('preview').src
+            };
+            try {
+                await setDoc(studentRef, newData, { merge: true });
+                showToast('Datos actualizados.');
+            } catch (e) {
+                console.error("Error updating document: ", e);
+                showToast('Error al actualizar.', 'error');
+            }
+        };
+
+        function cargarSelectorEstudiante() {
+            const selector = document.getElementById('selectorEstudiante');
+            const searchName = document.getElementById('searchName').value.toLowerCase();
+            const filterGrade = document.getElementById('filterGrade').value;
+            const currentId = selector.value;
+            
+            let estudiantesFiltrados = localStudents.filter(e => {
+                const nameMatch = e.data.nombre.toLowerCase().includes(searchName);
+                const gradeMatch = !filterGrade || e.data.curso === filterGrade;
+                return nameMatch && gradeMatch;
+            });
+            
+            selector.innerHTML = '<option value="">-- Seleccione de la lista filtrada --</option>';
+            estudiantesFiltrados.forEach(e => {
+                const option = document.createElement('option');
+                option.value = e.id;
+                option.textContent = `${e.data.nombre} - ${e.data.curso}`;
+                selector.appendChild(option);
+            });
+            
+            selector.value = currentId;
+            if (!selector.value) { 
+                document.getElementById('studentHeader').style.display = 'none';
+                document.getElementById('listaObservaciones').innerHTML = '<p>Seleccione un estudiante de la lista.</p>';
+                document.getElementById('obs-summary').style.display = 'none';
+            }
+        };
+
+        function cargarDatosEstudiante(studentId) {
+            const estudiante = localStudents.find(e => e.id === studentId)?.data;
+            if (estudiante) {
+                document.getElementById('studentPhoto').src = estudiante.foto || 'https://placehold.co/100x100/eeeeee/757575?text=Foto';
+                document.getElementById('studentName').textContent = estudiante.nombre;
+                document.getElementById('studentCourse').textContent = `Curso: ${estudiante.curso || 'N/A'}`;
+                document.getElementById('studentContact').textContent = `Tel: ${estudiante.telefono || 'N/A'} | Acudientes: ${estudiante.padre || 'N/A'} y ${estudiante.madre || 'N/A'}`;
+                document.getElementById('studentMedical').textContent = `EPS: ${estudiante.eps || 'N/A'} | RH: ${estudiante.rh || 'N/A'}`;
+                document.getElementById('nombre').value = estudiante.nombre || '';
+                document.getElementById('fechaNacimiento').value = estudiante.fechaNacimiento || '';
+                document.getElementById('tipoDocumento').value = estudiante.tipoDocumento || 'Registro Civil';
+                document.getElementById('numeroDocumento').value = estudiante.numeroDocumento || '';
+                document.getElementById('curso').value = estudiante.curso || '';
+                document.getElementById('telefono').value = estudiante.telefono || '';
+                document.getElementById('barrio').value = estudiante.barrio || '';
+                document.getElementById('padre').value = estudiante.padre || '';
+                document.getElementById('madre').value = estudiante.madre || '';
+                document.getElementById('eps').value = estudiante.eps || '';
+                document.getElementById('rh').value = estudiante.rh || '';
+                document.getElementById('preview').src = estudiante.foto || 'https://placehold.co/100x100/eeeeee/757575?text=Foto';
+            }
+        };
+        
+        async function guardarObservacion() {
+            const studentId = document.getElementById('selectorEstudiante').value;
+            if (!studentId) { showToast('Seleccione un estudiante.', 'error'); return; }
+            
+            const editingId = document.getElementById('editingObservationId').value;
+            const observacionData = { 
+                studentId: studentId,
+                fecha: document.getElementById('fecha').value, 
+                docente: document.getElementById('docente').value.trim(),
+                descripcion: document.getElementById('descripcion').value, 
+                accion: document.getElementById('accion').value, 
+                compromisos: document.getElementById('compromisos').value, 
+                firma: canvas.toDataURL(),
+                timestamp: new Date()
+            };
+            try {
+                const observationsCollection = collection(db, "estudiantes", studentId, "observaciones");
+                if (editingId) {
+                    const obsRef = doc(observationsCollection, editingId);
+                    await setDoc(obsRef, observacionData, { merge: true });
+                    showToast('Observación actualizada.');
+                } else {
+                    await addDoc(observationsCollection, observacionData);
+                    showToast('Observación guardada.');
+                }
+                cancelarEdicion();
+                mostrarVista('vista-historial', document.getElementById('tab-historial'));
+            } catch (e) {
+                console.error("Error guardando observación:", e);
+                showToast('Error al guardar la observación.', 'error');
+            }
+        };
+
+        function cargarObservacionParaEditar(obsId) {
+            const studentId = document.getElementById('selectorEstudiante').value;
+            const obs = localObservations.find(o => o.id === obsId)?.data;
+            if (obs) {
+                document.getElementById('editingObservationId').value = obsId;
+                document.getElementById('fecha').value = obs.fecha;
+                document.getElementById('docente').value = obs.docente || '';
+                document.getElementById('descripcion').value = obs.descripcion;
+                document.getElementById('accion').value = obs.accion;
+                document.getElementById('compromisos').value = obs.compromisos;
+                limpiarFirma();
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0);
+                img.src = obs.firma;
+                document.getElementById('form-observacion-titulo').textContent = 'Editar Observación';
+                document.getElementById('guardarObservacionBtn').textContent = 'Actualizar Observación';
+                document.getElementById('cancelarEdicionBtn').style.display = 'block';
+                mostrarVista('vista-agregar-observacion', document.getElementById('tab-agregar'));
+            }
+        };
+
+        async function eliminarObservacion(obsId) {
+            const studentId = document.getElementById('selectorEstudiante').value;
+            if (confirm('¿Estás seguro de que deseas eliminar esta observación?')) {
+                try {
+                    await deleteDoc(doc(db, "estudiantes", studentId, "observaciones", obsId));
+                    showToast('Observación eliminada.');
+                } catch (e) {
+                    console.error("Error eliminando:", e);
+                    showToast('Error al eliminar.', 'error');
+                }
+            }
+        };
+
+        function cancelarEdicion() {
+            document.getElementById('editingObservationId').value = '';
+            document.getElementById('form-observacion-titulo').textContent = 'Agregar Observación';
+            document.getElementById('guardarObservacionBtn').textContent = 'Guardar Observación';
+            document.getElementById('cancelarEdicionBtn').style.display = 'none';
+            document.getElementById('fecha').valueAsDate = new Date();
+            ['docente', 'descripcion', 'accion', 'compromisos', 'selectorFalta', 'selectorSituacion'].forEach(id => document.getElementById(id).value = '');
+            limpiarFirma();
+        };
+
+        function mostrarObservaciones() {
+            const lista = document.getElementById('listaObservaciones');
+            const summaryDiv = document.getElementById('obs-summary');
+            lista.innerHTML = '';
+            
+            if (localObservations.length === 0) {
+                lista.innerHTML = '<p>Este estudiante no tiene observaciones.</p>';
+                summaryDiv.style.display = 'none';
+                return;
+            }
+            const counts = { 'Leve': 0, 'Grave': 0, 'Muy Grave': 0 };
+            localObservations.forEach(obs => {
+                const faltaAsociada = faltas.find(f => f.texto === obs.data.descripcion);
+                if (faltaAsociada && counts.hasOwnProperty(faltaAsociada.tipo)) { counts[faltaAsociada.tipo]++; }
+            });
+            summaryDiv.innerHTML = `<strong>Resumen:</strong> ${localObservations.length} Observaciones | <span style="color: #4CAF50;">Leves: ${counts['Leve']}</span> | <span style="color: #FFC107;">Graves: ${counts['Grave']}</span> | <span style="color: #F44336;">Muy Graves: ${counts['Muy Grave']}</span>`;
+            summaryDiv.style.display = 'block';
+            localObservations.forEach(obs => {
+                const card = document.createElement('div');
+                card.className = 'obs-card';
+                card.innerHTML = `<p><strong>Fecha:</strong> ${obs.data.fecha}</p><p><strong>Reportado por:</strong> ${obs.data.docente || 'N/A'}</p><p><strong>Descripción:</strong> ${obs.data.descripcion}</p><p><strong>Acción:</strong> ${obs.data.accion}</p><p><strong>Compromisos:</strong> ${obs.data.compromisos}</p><p><strong>Firma:</strong></p><img src="${obs.data.firma}" alt="Firma" style="width: 200px; border: 1px solid #ddd; border-radius: 4px; background: white;"><div class="obs-card-actions"><button onclick="window.app.cargarObservacionParaEditar('${obs.id}')" class="btn-secondary">Editar</button><button onclick="window.app.eliminarObservacion('${obs.id}')" class="btn-primary" style="background-color: #757575;">Eliminar</button></div>`;
+                lista.appendChild(card);
+            });
+        };
+        
+        function generarPDF() {
+            const studentName = document.getElementById('studentName').textContent;
+            if (!studentName || studentName === 'Seleccione un estudiante') {
+                showToast('Por favor, seleccione un estudiante primero.', 'error');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const reportContent = document.createElement('div');
+            
+            const headerClone = document.getElementById('studentHeader').cloneNode(true);
+            const observationsClone = document.getElementById('listaObservaciones').cloneNode(true);
+            
+            headerClone.style.display = 'flex';
+            observationsClone.querySelectorAll('.obs-card-actions').forEach(el => el.remove());
+            reportContent.appendChild(headerClone);
+            reportContent.appendChild(observationsClone);
+            
+            const styles = document.createElement('style');
+            styles.innerHTML = ` body { font-family: Helvetica, sans-serif; color: #333; } .student-header { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; } .student-photo { width: 60px; height: 60px; border-radius: 50%; } .student-info h2 { font-size: 18px; margin: 0; } .student-info p { font-size: 10px; margin: 2px 0; color: #555; } .obs-card { border: 1px solid #eee; border-left: 3px solid #D32F2F; border-radius: 5px; padding: 10px; margin-bottom: 10px; } p { font-size: 10px; margin: 4px 0; } strong { font-size: 10px; } h3 { font-size: 14px; color: #D32F2F; border-bottom: 1px solid #eee; padding-bottom: 5px; } img { max-width: 150px; } `;
+            reportContent.appendChild(styles);
+
+            document.body.appendChild(reportContent);
+            reportContent.style.position = 'absolute';
+            reportContent.style.left = '-9999px';
+            reportContent.style.width = '700px';
+
+            html2canvas(reportContent, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdfWidth = doc.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                doc.save(`observador_${studentName.replace(/\s/g, '_')}.pdf`);
+                document.body.removeChild(reportContent);
+            });
+        }
+
+        function cargarFaltasYSituaciones() {
+            const selectorFalta = document.getElementById('selectorFalta');
+            const selectorSituacion = document.getElementById('selectorSituacion');
+            selectorFalta.innerHTML = '<option value="">-- Seleccionar falta --</option>';
+            selectorSituacion.innerHTML = '<option value="">-- Seleccionar situación --</option>';
+            faltas.forEach((f, index) => selectorFalta.add(new Option(`Falta ${f.tipo.toUpperCase()}: ${f.texto.substring(0, 70)}...`, String(index))));
+            situaciones.forEach((s, index) => selectorSituacion.add(new Option(`Situación TIPO ${s.tipo}: ${s.texto.substring(0, 70)}...`, String(index))));
+        };
+        
+        function rellenarFalta() { const index = document.getElementById('selectorFalta').value; if (index !== "") { const falta = faltas[parseInt(index)]; document.getElementById('descripcion').value = falta.texto; document.getElementById('accion').value = falta.accion; document.getElementById('selectorSituacion').value = ""; } };
+        function rellenarSituacion() { const index = document.getElementById('selectorSituacion').value; if (index !== "") { const situacion = situaciones[parseInt(index)]; document.getElementById('descripcion').value = situacion.texto; document.getElementById('accion').value = 'Acción a determinar según protocolo.'; document.getElementById('selectorFalta').value = ""; } };
+        
+        function init() {
+            const q = query(collection(db, "estudiantes"), where("owner", "==", auth.currentUser.uid), orderBy("nombre"));
+            if (unsubscribeStudents) unsubscribeStudents();
+            unsubscribeStudents = onSnapshot(q, (snapshot) => {
+                localStudents = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+                cargarSelectorEstudiante();
+            });
+
+            document.getElementById('selectorEstudiante').addEventListener('change', function() {
+                const studentId = this.value;
+                if (unsubscribeObservations) unsubscribeObservations();
+                if (studentId) {
+                    cargarDatosEstudiante(studentId);
+                    document.getElementById('studentHeader').style.display = 'flex';
+                    const obsQuery = query(collection(db, "estudiantes", studentId, "observaciones"), orderBy("timestamp", "desc"));
+                    unsubscribeObservations = onSnapshot(obsQuery, (snapshot) => {
+                        localObservations = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+                        mostrarObservaciones();
+                    });
+                } else {
+                    document.getElementById('studentHeader').style.display = 'none';
+                    document.getElementById('listaObservaciones').innerHTML = '<p>Seleccione un estudiante de la lista.</p>';
+                    document.getElementById('obs-summary').style.display = 'none';
+                }
+            });
+
+            document.getElementById('searchName').addEventListener('input', () => cargarSelectorEstudiante());
+            document.getElementById('filterGrade').addEventListener('change', () => cargarSelectorEstudiante());
+            document.getElementById('selectorFalta').onchange = rellenarFalta;
+            document.getElementById('selectorSituacion').onchange = rellenarSituacion;
+            document.getElementById('foto').addEventListener('change', function () {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => { document.getElementById('preview').src = e.target.result; };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+
+            populateGradeSelectors();
+            cargarFaltasYSituaciones();
+            document.getElementById('fecha').valueAsDate = new Date();
+        }
+
+        function cleanup() {
+            if (unsubscribeStudents) unsubscribeStudents();
+            if (unsubscribeObservations) unsubscribeObservations();
+            localStudents = [];
+            localObservations = [];
+        }
+
+        return { init, cleanup, mostrarVista, guardarEstudiante, actualizarEstudiante, guardarObservacion, cargarObservacionParaEditar, eliminarObservacion, cancelarEdicion, generarPDF };
+    })();
+  </script>
+</body>
+</html>
